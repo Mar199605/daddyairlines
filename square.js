@@ -1,3 +1,4 @@
+
 class Square {
     constructor(x, y, r) {
         this.x = x;
@@ -5,8 +6,14 @@ class Square {
         this.r = r;
         this.brightness = 0;
         this.clickstate = false;
-        this.infstate = false;
         this.alpha = 10;
+
+        //timecontrol
+        this.t = 0;
+        this.abst = 10;
+
+        //linecontrol
+        this.l = 0;
 
         this.show = function () {
             stroke(255);
@@ -36,15 +43,28 @@ class Square {
             this.brightness = 255;
             this.alpha = 255;
         }
+
         this.notover = function () {
-            this.r = r;
-        }
-        this.inf = function (dis) {
-            this.r = dis;
-            if (!this.clickstate) {
-                this.brightness = 0;
-                this.alpha = 5;
+            this.chag = (r - this.r) * this.t / this.abst + this.r;
+            this.r = this.chag;
+            this.t = this.t + 1;
+            if (this.t > this.abst) {
+                this.t = this.abst;
             }
         }
+
+        this.inf = function (dis) {
+            this.chag = (dis - r) * this.t / this.abst + r;
+            this.r = this.chag;
+            this.t = this.t + 1;
+            if (this.t > this.abst) {
+                this.t = this.abst;
+            }
+            if (!this.clickstate) {
+                this.brightness = 0;
+                this.alpha = 10;
+            }
+        }
+
     }
 }
