@@ -6,7 +6,13 @@ let r = 30;
 let edgeY = 0;
 let edgeX = 0;
 
+let ln = 0;
+let pn = 0;
+
+let pts = [];
+
 function setup() {
+
     canvas = createCanvas(windowWidth, windowHeight);
     canvas.position(0, 0);
     canvas.style('z-index', '-1');
@@ -23,21 +29,30 @@ function setup() {
 
     for (var i = 0; i < row; i++) {
         for (var j = 0; j < column; j++) {
-            let x = r / 2 + j * r;
-            let y = r / 2 + i * r;
+            let x = (r / 2) + j * r;
+            let y = (r / 2) + i * r;
             let b = new Square(x, y, r);
             squares.push(b);
         }
 
     }
+
 }
 
 function mousePressed() {
     for (b of squares) {
         if (b.intersects(mouseX, mouseY)) {
             b.clicked();
+            if (pn % 2 == 0) {
+                b.l = 1;
+            } else {
+                b.l = 2;
+            }
+            pts.push(b);
+            pn = pn + 1;
         }
     }
+
 }
 
 function mouseOver() {
@@ -45,19 +60,40 @@ function mouseOver() {
     // check mouseOver
     if (mouseX < edgeX && mouseX > 0) {
         if (mouseY < edgeY && mouseY > 0) {
+            if (!mouseoverstate) {
+                for (b of squares) {
+                    b.t = 0;
+                }
+            }
             mouseoverstate = true;
+
         } else {
+            //change timestate of every square
+            if (mouseoverstate) {
+                for (b of squares) {
+                    b.t = 0;
+                }
+            }
             mouseoverstate = false;
+
         }
     } else {
+        //change timestate of every square
+        if (mouseoverstate) {
+            for (b of squares) {
+                b.t = 0;
+            }
+        }
         mouseoverstate = false;
+
     }
+
 
 
     if (mouseoverstate) {
         //Influence other squares
         for (q of squares) {
-            let dis = 10 + (abs((dist(q.x, q.y, mouseX, mouseY) - 80)) ^ 2) / 80;
+            let dis = (r / 3) + (abs((dist(q.x, q.y, mouseX, mouseY) - (3 * r))) ^ 2) / (3 * r);
             if (dis > r) {
                 dis = r;
             }
@@ -73,22 +109,42 @@ function mouseOver() {
         }
     }
 
-    if (mouseoverstate == false) {
-        for (var i = 0; i < squares.length; i++) {
-            squares[i].notover();
+    if (!mouseoverstate) {
+        for (b of squares) {
+            b.notover();
         }
     }
 
 }
 
+function connect() {
+
+    for (let i = 0; i < pts.length; i++) {
+        if (i % 2 != 0 && i > 0) {
+            push();
+            strokeWeight(4);
+            line(pts[i - 1].x, pts[i - 1].y, pts[i].x, pts[i].y);
+            pbezier(pts[i - 1].x, pts[i - 1].y, pts[i].x, pts[i].y);
+            pop();
+        }
+    }
+
+}
+
+function pbezier(x1, y1, x2, y2) {
+    
+}
+
 function draw() {
     background(bgcolor);
-    ellipse(mouseX, mouseY, 5, 5);
+
     mouseOver();
+    connect();
 
     for (b of squares) {
         b.show();
     }
+
 }
 
 
@@ -107,8 +163,8 @@ function windowResized() {
 
     for (var i = 0; i < row; i++) {
         for (var j = 0; j < column; j++) {
-            let x = r + j * r;
-            let y = r + i * r;
+            let x = r / 2 + j * r;
+            let y = r / 2 + i * r;
             let b = new Square(x, y, r);
             squares.push(b);
         }
