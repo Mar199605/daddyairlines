@@ -123,16 +123,51 @@ function connect() {
         if (i % 2 != 0 && i > 0) {
             push();
             strokeWeight(4);
-            line(pts[i - 1].x, pts[i - 1].y, pts[i].x, pts[i].y);
-            pbezier(pts[i - 1].x, pts[i - 1].y, pts[i].x, pts[i].y);
+            // line(pts[i - 1].x, pts[i - 1].y, pts[i].x, pts[i].y);
+            pbezier(pts[i - 1].x, pts[i - 1].y, pts[i].x, pts[i].y, 0);
             pop();
+        }
+        if (i % 2 == 0 && i == (pts.length - 1)) {
+            pbezier(pts[i].x, pts[i].y, mouseX, mouseY, 1);
         }
     }
 
 }
 
-function pbezier(x1, y1, x2, y2) {
-    
+function pbezier(x1, y1, x2, y2, dash) {
+
+    let d = (Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2))) * 1.5;
+    let x3 = 0;
+    let y3 = 0;
+
+
+    if (x2 > x1) {
+        x3 = x2 - d * (y1 - y2) / Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+        y3 = y2 + d * (x1 - x2) / Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+
+    } else {
+        x3 = x2 + d * (y1 - y2) / Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+        y3 = y2 - d * (x1 - x2) / Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+
+    }
+
+    let x4 = x3 - x2 + x1;
+    let y4 = y3 - y2 + y1;
+
+    push();
+    stroke(255);
+    strokeWeight(2);
+    noFill();
+    beginShape();
+    if (dash == 1) {
+        drawingContext.setLineDash([random(4,5),5]);
+    }
+    curveVertex(x4, y4);
+    curveVertex(x1, y1);
+    curveVertex(x2, y2);
+    curveVertex(x3, y3);
+    endShape();
+    pop();
 }
 
 function draw() {
