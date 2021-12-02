@@ -1,20 +1,23 @@
-
 class Square {
-    constructor(x, y, r) {
+
+    grid = codegrid.CodeGrid();
+
+    constructor(x, y, r, lon, lat, code) {
         this.x = x;
         this.y = y;
         this.r = r;
         this.brightness = 0;
         this.clickstate = false;
         this.alpha = 10;
+        this.lat = lat;
+        this.lon = lon;
+        this.code = code;
 
         //timecontrol
         this.t = 0;
         this.abst = 10;
 
-        //linecontrol
-        this.l = 0;
-
+        //overall style
         this.show = function () {
             stroke(255);
             fill(this.brightness, this.alpha);
@@ -22,22 +25,13 @@ class Square {
             rect(this.x, this.y, this.r, this.r);
         };
 
+        //check mouse on squares
         this.intersects = function (px, py) {
             if (px > this.x - (this.r / 2) && px < this.x + (this.r / 2) && py > this.y - (this.r / 2) && py < this.y + (this.r / 2)) {
                 return true;
             }
         }
-
-        this.clicked = function () {
-            if (this.clickstate) {
-                this.clickstate = false;
-                this.brightness = 0;
-            } else {
-                this.clickstate = true;
-                this.brightness = 255;
-            }
-        }
-
+        //mouse on squares style
         this.over = function () {
             this.r = r;
             this.brightness = 255;
@@ -65,6 +59,19 @@ class Square {
                 this.alpha = 10;
             }
         }
+
+        //click style
+        this.clicked = function () {
+            print(this.code, this.lat, this.lon);
+            if (this.clickstate) {
+                this.clickstate = false;
+                this.brightness = 0;
+            } else {
+                this.clickstate = true;
+                this.brightness = 255;
+            }
+        }
+
 
     }
 }
