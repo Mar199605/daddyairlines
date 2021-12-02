@@ -1,55 +1,110 @@
-let canvas;
+grid = codegrid.CodeGrid();
+
 let squares = [];
 let mouseoverstate = false;
-let r = 30;
 
 let edgeY = 0;
 let edgeX = 0;
 
-let ln = 0;
-let pn = 0;
-
 let pts = [];
+let datas = [];
+
+
+function preload() {
+    mapimg = loadImage("https://api.mapbox.com/styles/v1/mapbox/dark-v9/static/0,0,1/1024x512?access_token=pk.eyJ1IjoiaHVsa21hIiwiYSI6ImNrd2ljN3o0cjE2aWgycG11NmJvaWJ4MHUifQ.Ve1W7M0sPwfdCtSK5dbzeA");
+}
+
 
 function setup() {
 
+    let cx = mercX(0);
+    let cy = mercY(0);
+
+    let windowWidth = 1024;
+    let windowHeight = 512;
+    let width = windowWidth;
+    let height = windowHeight;
+
+
     canvas = createCanvas(windowWidth, windowHeight);
     canvas.position(0, 0);
-    canvas.style('z-index', '-1');
+
+    translate(width / 2, height / 2);
     bgcolor = 200;
 
 
-    r = windowWidth / 60;
+    r = width / 75;
     let row = int(windowHeight / r);
     let column = int(windowWidth / r);
 
     // check edge (need to modify)
-    edgeX = r / 2 + column * r;
-    edgeY = r / 2 + row * r;
+    edgeX = column * r;
+    edgeY = row * r;
 
+    // add squares
     for (var i = 0; i < row; i++) {
         for (var j = 0; j < column; j++) {
-            let x = (r / 2) + j * r;
-            let y = (r / 2) + i * r;
-            let b = new Square(x, y, r);
-            squares.push(b);
+            let x = (r / 2) + j * r - windowWidth / 2;
+            let y = (r / 2) + i * r - windowHeight / 2;
+
+            let lon = rmercX(x + cx);
+            let lat = rmercY(y + cy);
+            let code = geo(lat, lon);
+
+            //rough search
+            let rou = 1;
+            if (code == 'None') {
+                for (i1 = -1; i1 < 2; i1++) {
+                    for (j1 = -1; j1 < 2; j1++) {
+                        let lon_s = rmercX(x + cx + j1 * rou);
+                        let lat_s = rmercY(y + cy + i1 * rou);
+                        
+                        if(geo(lat_s, lon_s) != 'None'){
+                            code = geo(lat_s, lon_s);
+                        }
+                    }
+
+                }
+            }
+
+            if (code != 'None' && code) {
+                let squa = new Square(x, y, r, lon, lat, code);
+                squares.push(squa);
+            }
         }
 
     }
 
+
+}
+
+
+function draw() {
+
+    background(bgcolor);
+
+    translate(width / 2, height / 2);
+    imageMode(CENTER);
+    // image(mapimg, 0, 0);
+
+    mouseOver();
+    connect();
+
+    ellipse(mouseX - width / 2, mouseY - height / 2, 8, 8);
+
+    for (squa of squares) {
+        squa.show();
+    }
+
+
 }
 
 function mousePressed() {
-    for (b of squares) {
-        if (b.intersects(mouseX, mouseY)) {
-            b.clicked();
-            if (pn % 2 == 0) {
-                b.l = 1;
-            } else {
-                b.l = 2;
-            }
-            pts.push(b);
-            pn = pn + 1;
+    for (squa of squares) {
+        if (squa.intersects(mouseX - width / 2, mouseY - height / 2)) {
+            squa.clicked();
+
+            pts.push(squa);
         }
     }
 
@@ -57,31 +112,21 @@ function mousePressed() {
 
 function mouseOver() {
 
-    // check mouseOver
-    if (mouseX < edgeX && mouseX > 0) {
-        if (mouseY < edgeY && mouseY > 0) {
-            if (!mouseoverstate) {
-                for (b of squares) {
-                    b.t = 0;
-                }
+    //check mouse in canvas
+    if (mouseX < width && mouseX > 0 && mouseY < height && mouseY > 0) {
+        if (!mouseoverstate) {
+            for (squa of squares) {
+                squa.t = 0;
             }
-            mouseoverstate = true;
-
-        } else {
-            //change timestate of every square
-            if (mouseoverstate) {
-                for (b of squares) {
-                    b.t = 0;
-                }
-            }
-            mouseoverstate = false;
-
         }
+        mouseoverstate = true;
+
+
     } else {
-        //change timestate of every square
+        //check mouse out canvas
         if (mouseoverstate) {
-            for (b of squares) {
-                b.t = 0;
+            for (squa of squares) {
+                squa.t = 0;
             }
         }
         mouseoverstate = false;
@@ -90,28 +135,29 @@ function mouseOver() {
 
 
 
+
     if (mouseoverstate) {
-        //Influence other squares
+        //Influence squares
         for (q of squares) {
-            let dis = (r / 3) + (abs((dist(q.x, q.y, mouseX, mouseY) - (3 * r))) ^ 2) / (3 * r);
+            let dis = (r / 3) + (abs((dist(q.x, q.y, mouseX - width / 2, mouseY - height / 2) - (3 * r))) ^ 2) / (3 * r);
             if (dis > r) {
                 dis = r;
             }
-            if (dist(q.x, q.y, mouseX, mouseY) < 60) {
+            if (dist(q.x, q.y, mouseX - width / 2, mouseY - height / 2) < 60) {
                 dis = dis * 1.5;
             }
             q.inf(dis);
         }
-        for (b of squares) {
-            if (b.intersects(mouseX, mouseY)) {
-                b.over();
+        for (squa of squares) {
+            if (squa.intersects(mouseX - width / 2, mouseY - height / 2)) {
+                squa.over();
             }
         }
     }
 
     if (!mouseoverstate) {
-        for (b of squares) {
-            b.notover();
+        for (squa of squares) {
+            squa.notover();
         }
     }
 
@@ -128,7 +174,7 @@ function connect() {
             pop();
         }
         if (i % 2 == 0 && i == (pts.length - 1)) {
-            pbezier(pts[i].x, pts[i].y, mouseX, mouseY, 1);
+            pbezier(pts[i].x, pts[i].y, mouseX - width / 2, mouseY - height / 2, 1);
         }
     }
 
@@ -156,11 +202,11 @@ function pbezier(x1, y1, x2, y2, dash) {
 
     push();
     stroke(255);
-    strokeWeight(2);
+    strokeWeight(1);
     noFill();
     beginShape();
     if (dash == 1) {
-        drawingContext.setLineDash([random(4,5),5]);
+        drawingContext.setLineDash([4, 5]);
     }
     curveVertex(x4, y4);
     curveVertex(x1, y1);
@@ -170,39 +216,75 @@ function pbezier(x1, y1, x2, y2, dash) {
     pop();
 }
 
-function draw() {
-    background(bgcolor);
+// function windowResized() {
 
-    mouseOver();
-    connect();
+//     //!should be translation approach (later)
+//     resizeCanvas(windowWidth, windowHeight);
+//     num = squares.length;
+//     squares.splice(0, num);
 
-    for (b of squares) {
-        b.show();
-    }
+//     r = windowWidth / 60;
+//     let row = int(windowHeight / r);
+//     let column = int(windowWidth / r);
+
+//     // check edge (need to modify)
+//     edgeX = r + column * r;
+//     edgeY = r + row * r;
+
+//     for (var i = 0; i < row; i++) {
+//         for (var j = 0; j < column; j++) {
+//             let x = r / 2 + j * r;
+//             let y = r / 2 + i * r;
+//             let squa = new Square(x, y, r);
+//             squares.push(squa);
+//         }
+
+//     }
+// }
+
+
+function geo(lat, lng) {
+    grid.getCode(lat, lng, function (err, code) {
+        var msg;
+        if (err) {
+            msg = err;
+        } else {
+            msg = "Calling getCode(" + lat + "," + lng + ") returned: " + code;
+        }
+
+        result = code;
+    });
+    return result;
 
 }
 
 
-function windowResized() {
-    resizeCanvas(windowWidth, windowHeight);
-    num = squares.length;
-    squares.splice(0, num);
+//projection coordinate
+function mercX(lon) {
+    lon = radians(lon);
+    var a = (256 / PI) * pow(2, 1);
+    var b = lon + PI;
+    return a * b;
+}
 
-    r = windowWidth / 60;
-    let row = int(windowHeight / r);
-    let column = int(windowWidth / r);
+function mercY(lat) {
+    lat = radians(lat);
+    var a = (256 / PI) * pow(2, 1);
+    var b = tan(PI / 4 + lat / 2);
+    var c = PI - log(b);
+    return a * c;
+}
 
-    // check edge (need to modify)
-    edgeX = r + column * r;
-    edgeY = r + row * r;
+function rmercX(x) {
+    var a = (x * PI) / (256 * pow(2, 1)) - PI;
+    return a * 180 / PI;
+}
 
-    for (var i = 0; i < row; i++) {
-        for (var j = 0; j < column; j++) {
-            let x = r / 2 + j * r;
-            let y = r / 2 + i * r;
-            let b = new Square(x, y, r);
-            squares.push(b);
-        }
+function rmercY(y) {
+    var a = PI - (y * PI / 256) / pow(2, 1);
+    var b = pow(Math.E, a);
+    var c = Math.atan(b);
+    var d = (4 * c - PI) / 2;
+    return d * 180 / PI;
 
-    }
 }
